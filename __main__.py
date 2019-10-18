@@ -1,7 +1,5 @@
-from regression.symbollic_trees import GenerationParameters
-from regression.symbollic_trees import SymbolicTreeGenerator
+from regression.symbollic_trees import GenerationParameters, SymbolicTreeGenerator, generate_population
 
-gen_par = GenerationParameters(3, [1, 2, 3], ['divide', 'multiply'])
+gen_par = GenerationParameters(5, [1, 2, 3], ['divide', 'multiply'], 3)
 
-sym_tree_gen = SymbolicTreeGenerator(gen_par)
-tree = sym_tree_gen.generate_random_tree_grow()
+trees = generate_population(100, gen_par)

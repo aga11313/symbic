@@ -1,4 +1,5 @@
 import random
+from sympy import Mul, Symbol, Integer, symbols, Pow
 
 class SymbolicTree:
     def __init__(self):
@@ -14,19 +15,21 @@ class Function:
         self.function = function
 
 class NonTerminal():
-    def __init__(self, name, number_of_parameters):
+    def __init__(self, name, number_of_parameters, sympy_expression):
         self.name = name
         self.number_of_parameters = number_of_parameters
+        self.sympy_expression = sympy_expression
 
 class Node:
-    def __init__ (self, value):
+    def __init__ (self, value, expression_below):
         self.value = value
         self.left = None
         self.right = None
+        self.expression_below = expression_below
 
 non_terminals_list = {
-    'multiply': Function('non_terminal', NonTerminal('multiply', 2)),
-    'divide': Function('non_terminal', NonTerminal('divide', 2))
+    'multiply': Function('non_terminal', NonTerminal('multiply', 2, Mul(Symbol('x'), Symbol('y')))),
+    'divide': Function('non_terminal', NonTerminal('divide', 2, Mul(Symbol('x'), Pow(Symbol('y'), Integer(-1)))))
 }
 
 class SymbolicTreeGenerator:
@@ -43,25 +46,38 @@ class SymbolicTreeGenerator:
 
     def grow(self, max_depth):
         if max_depth == self.generation_parameters.max_depth:
-            return random.choice(self.generation_parameters.terminals)
+            random_terminal = random.choice(self.generation_parameters.symbolic_terminals + self.generation_parameters.numerical_terminals)
+            return Node(random_terminal, random_terminal)
         else:
             random_function = random.choice(self.generation_parameters.functions)
-            if random_function.type == 'terminal':
-                return random_function
+            if random_function.type == 'numerical_terminal' or random_function.type == 'symbolic_terminal':
+                return Node(random_function, random_function.function)
             else:
                 if random_function.function.number_of_parameters == 2:
                     # returns the subtree for the function
-                    new_tree = Node(random_function)
-                    new_tree.rigth = self.grow(max_depth + 1)
+                    new_tree = Node(random_function, None)
+                    new_tree.right = self.grow(max_depth + 1)
                     new_tree.left = self.grow(max_depth + 1)
-                #assemble tree to return
-                return  new_tree
+                    x, y = symbols('x y')
+                    new_tree.expression_below = random_function.function.sympy_expression.subs(x, new_tree.left.expression_below).subs(y, new_tree.right.expression_below)
+                    return  new_tree
 
 class GenerationParameters:
-    def __init__(self, max_depth, terminals, non_terminals):
+    def __init__(self, max_depth, terminals, non_terminals, number_of_variables):
         self.max_depth = max_depth
+        self.number_of_variables = number_of_variables
 
-        self.terminals = list(map(lambda value: Function('terminal', value), terminals))
+        self.numerical_terminals = list(map(lambda value: Function('numerical_terminal', value), terminals))
         self.non_terminals = list(map(lambda name: non_terminals_list[name], non_terminals))
+        self.symbolic_terminals = list(map(lambda idx: Function('symbolic_terminal', Symbol('x' + str(idx))), range(number_of_variables))) 
 
-        self.functions = self.terminals + self.non_terminals
+        self.functions = self.numerical_terminals + self.symbolic_terminals + self.non_terminals
+
+
+def generate_population(size, generation_parameters):
+    tree_generator = SymbolicTreeGenerator(generation_parameters)
+    population = []
+    for _ in range(size):
+        population.append(tree_generator.generate_random_tree_grow())
+
+    return population
