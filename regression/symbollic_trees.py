@@ -1,5 +1,5 @@
-import random
-from sympy import Mul, Symbol, Integer, symbols, Pow
+import random, math
+from sympy import Mul, Symbol, Integer, symbols, Pow, sin
 
 class SymbolicTree:
     def __init__(self):
@@ -29,7 +29,8 @@ class Node:
 
 non_terminals_list = {
     'multiply': Function('non_terminal', NonTerminal('multiply', 2, Mul(Symbol('x'), Symbol('y')))),
-    'divide': Function('non_terminal', NonTerminal('divide', 2, Mul(Symbol('x'), Pow(Symbol('y'), Integer(-1)))))
+    'divide': Function('non_terminal', NonTerminal('divide', 2, Mul(Symbol('x'), Pow(Symbol('y'), Integer(-1))))),
+    'sinus': Function('non_terminal', NonTerminal('sinus', 1, sin(Symbol('x'))))
 }
 
 class SymbolicTreeGenerator:
@@ -47,7 +48,7 @@ class SymbolicTreeGenerator:
     def grow(self, max_depth):
         if max_depth == self.generation_parameters.max_depth:
             random_terminal = random.choice(self.generation_parameters.symbolic_terminals + self.generation_parameters.numerical_terminals)
-            return Node(random_terminal, random_terminal)
+            return Node(random_terminal, random_terminal.function)
         else:
             random_function = random.choice(self.generation_parameters.functions)
             if random_function.type == 'numerical_terminal' or random_function.type == 'symbolic_terminal':
@@ -60,7 +61,16 @@ class SymbolicTreeGenerator:
                     new_tree.left = self.grow(max_depth + 1)
                     x, y = symbols('x y')
                     new_tree.expression_below = random_function.function.sympy_expression.subs(x, new_tree.left.expression_below).subs(y, new_tree.right.expression_below)
-                    return  new_tree
+
+                elif random_function.function.number_of_parameters == 1:
+                    new_tree = Node(random_function, None)
+                    new_tree.right = None
+                    new_tree.left = self.grow(max_depth + 1)
+                    x = Symbol('x')
+                    new_tree.expression_below = random_function.function.sympy_expression.subs(x, new_tree.left.expression_below)
+
+                return new_tree
+
 
 class GenerationParameters:
     def __init__(self, max_depth, terminals, non_terminals, number_of_variables):
