@@ -4,10 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sympy import Symbol, sin
 from evaluation.evaluate import score_expression
+import sys
 
 # symbolic regression parameters
 MAX_NUMBER_OF_INDEPENDENT_VARIABLES = 1
-TOP_OF_POPULATION = 10
+TOP_OF_POPULATION = 1
 SIZE_OF_POPULATION = 100
 MAX_TREE_DEPTH = 4
 TERMINALS = [1, 2, 3]
@@ -26,18 +27,32 @@ gen_par = GenerationParameters(MAX_TREE_DEPTH, TERMINALS, NON_TERMINALS, MAX_NUM
 
 # generate noisy data sample
 noisy_data, x = generate_noisy_function(FUNCTION, LOC, SCALE, NUMBER_OF_SAMPLE_POINTS, UPPER_BOUNDARY, LOWER_BOUNDARY)
+plt.plot(noisy_data, x, 'ro')
 
-# generate initial population of expressions
-trees = generate_population(SIZE_OF_POPULATION, gen_par)
+a = np.linspace(0,2 * np.pi,100)
+plt.plot(a, np.sin(a), 'r')
 
-# evaluate all expressions from the initial population
-scores = np.array([])
-for tree in trees:
-    score = score_expression(x, np.reshape(noisy_data, (len(x), 1)), tree.expression_below, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
-    scores = np.append(scores, [score])
+# initialize best expression variables
+best_expression_score = 100000 # some arbitrary large number
+best_expression = 0
 
-# choose the best of the population
-top_of_population = scores.argsort()[:TOP_OF_POPULATION]
+try:
+    while True:
+        # generate initial population of expressions
+        current_trees_population = generate_population(SIZE_OF_POPULATION, gen_par)
+        # evaluate all expressions from population
+        scores = np.array([])
+        for tree in current_trees_population:
+            score = score_expression(x, np.reshape(noisy_data, (len(x), 1)), tree.expression_below, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
+            scores = np.append(scores, [score])
+
+        # choose the best elements of the population
+        top_of_population_score_idx = scores.argsort()[:TOP_OF_POPULATION][0]
+        if scores[top_of_population_score_idx] < best_expression_score:
+            best_expression_score = scores[top_of_population_score_idx]
+            best_expression = current_trees_population[top_of_population_score_idx].expression_below
+except KeyboardInterrupt:
+    pass
 
 '''
 Example usage of generate_noisy_function
