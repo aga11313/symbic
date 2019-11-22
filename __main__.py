@@ -1,4 +1,4 @@
-from regression.symbollic_trees import GenerationParameters, SymbolicTreeGenerator, mutate_tree
+from regression.symbollic_trees import GenerationParameters, SymbolicTreeGenerator, mutate_tree, crossover_trees
 from testset.generate import generate_noisy_function
 import numpy as np
 import matplotlib.pyplot as plt
@@ -71,6 +71,7 @@ try:
         for idx in range(TO_CROSSOVER/2):
             tree1 = np.random.choice(current_trees_population, p=probabilites)
             tree2 = np.random.choice(current_trees_population, p=probabilites)
+            crossover_trees(tree1, tree2)
             
 
         # mutation

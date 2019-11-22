@@ -131,3 +131,28 @@ def mutate_tree(tree, tree_generator):
     while current_node.parent != None:
         current_node.size_below = current_node.right.size_below if current_node.right else 0 + current_node.left.size_below if current_node.left else 0
         current_node = current_node.parent
+
+def crossover_trees(tree1, tree2):
+    random_node1 = tree1.find_random_node()
+    random_node2 = tree2.find_random_node()
+
+    temp_parent = random_node2.parent
+
+    random_node1.parent = random_node2.parent
+    random_node2.parent = temp_parent
+
+    if random_node1 == tree1.root:
+        tree1.root = random_node2
+    
+    if random_node2 == tree2.root:
+        tree2.root = random_node1
+
+    current_node = random_node1.parent
+    while current_node.parent != None:
+        current_node.size_below = current_node.right.size_below if current_node.right else 0 + current_node.left.size_below if current_node.left else 0
+        current_node = current_node.parent
+
+    current_node = random_node2.parent
+    while current_node.parent != None:
+        current_node.size_below = current_node.right.size_below if current_node.right else 0 + current_node.left.size_below if current_node.left else 0
+        current_node = current_node.parent
