@@ -8,8 +8,10 @@ import sys
 
 # symbolic regression parameters
 MAX_NUMBER_OF_INDEPENDENT_VARIABLES = 1
-TOP_OF_POPULATION = 1
+TO_MUTATE = 50
+TO_CROSSOVER = 30 # must be even
 SIZE_OF_POPULATION = 100
+TOP_OF_POPULATION = SIZE_OF_POPULATION - (TO_MUTATE + TO_CROSSOVER)
 MAX_TREE_DEPTH = 4
 TERMINALS = [1, 2, 3]
 NON_TERMINALS =  ['divide', 'multiply', 'sinus']
@@ -45,12 +47,34 @@ try:
         for tree in current_trees_population:
             score = score_expression(x, np.reshape(noisy_data, (len(x), 1)), tree.expression_below, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
             scores = np.append(scores, [score])
+        
+        probabilites = np.divide(scores, np.sum(scores))
+        sorted_score_indices = scores.argsort()
 
-        # choose the best elements of the population
-        top_of_population_score_idx = scores.argsort()[:TOP_OF_POPULATION][0]
+        # check if the best member of current population better than previous best
+        top_of_population_score_idx = sorted_score_indices[:1][0]
         if scores[top_of_population_score_idx] < best_expression_score:
             best_expression_score = scores[top_of_population_score_idx]
             best_expression = current_trees_population[top_of_population_score_idx].expression_below
+
+        new_trees_population = []
+
+        for idx in range(TOP_OF_POPULATION):
+            tree1 = np.random.choice(current_trees_population, probabilites)
+            new_trees_population = new_trees_population + tree1
+
+        # perform crossover and mutation
+        # crossover
+        for idx in range(TO_CROSSOVER/2):
+            tree1 = np.random.choice(current_trees_population, p=probabilites)
+            tree2 = np.random.choice(current_trees_population, p=probabilites)
+            
+
+        # mutation
+        for idx in range(TO_MUTATE):
+            tree_to_mutate = np.random.choice(current_trees_population)
+
+
 except KeyboardInterrupt:
     pass
 

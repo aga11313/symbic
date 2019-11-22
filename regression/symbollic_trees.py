@@ -1,5 +1,6 @@
 import random, math
 from sympy import Mul, Symbol, Integer, symbols, Pow, sin
+import numpy as np
 
 class SymbolicTree:
     def __init__(self):
@@ -8,6 +9,20 @@ class SymbolicTree:
     def get_expression(self):
         # return the current tree as a mathematical expression
         pass
+
+    def find_random_node(self):
+        if self.root.left == None:
+            leftSize = 0
+        else:
+            leftSize = self.root.left.size_below
+
+        index = np.random.choice(self.root.size_below)
+        if index < leftSize:
+            return self.root.left.find_random_node()
+        elif index == leftSize:
+            return self
+        else:
+            return self.root.right.find_random_node()
 
 class Function:
     def __init__(self, type_of_function, function):
@@ -21,16 +36,18 @@ class NonTerminal():
         self.sympy_expression = sympy_expression
 
 class Node:
-    def __init__ (self, value, expression_below):
+    def __init__ (self, value, expression_below, size_below):
         self.value = value
         self.left = None
         self.right = None
         self.expression_below = expression_below
+        self.size_below = size_below
 
 non_terminals_list = {
     'multiply': Function('non_terminal', NonTerminal('multiply', 2, Mul(Symbol('x'), Symbol('y')))),
     'divide': Function('non_terminal', NonTerminal('divide', 2, Mul(Symbol('x'), Pow(Symbol('y'), Integer(-1))))),
-    'sinus': Function('non_terminal', NonTerminal('sinus', 1, sin(Symbol('x'))))
+    'sinus': Function('non_terminal', NonTerminal('sinus', 1, sin(Symbol('x')))),
+    'power': Function('non_terminal', NonTerminal('power', 2, Pow(Symbol('x'), Symbol('y'))))
 }
 
 class SymbolicTreeGenerator:
@@ -48,26 +65,28 @@ class SymbolicTreeGenerator:
     def grow(self, max_depth):
         if max_depth == self.generation_parameters.max_depth:
             random_terminal = random.choice(self.generation_parameters.symbolic_terminals + self.generation_parameters.numerical_terminals)
-            return Node(random_terminal, random_terminal.function)
+            return Node(random_terminal, random_terminal.function, 0)
         else:
             random_function = random.choice(self.generation_parameters.functions)
             if random_function.type == 'numerical_terminal' or random_function.type == 'symbolic_terminal':
-                return Node(random_function, random_function.function)
+                return Node(random_function, random_function.function, 0)
             else:
                 if random_function.function.number_of_parameters == 2:
                     # returns the subtree for the function
-                    new_tree = Node(random_function, None)
+                    new_tree = Node(random_function, None, None)
                     new_tree.right = self.grow(max_depth + 1)
                     new_tree.left = self.grow(max_depth + 1)
                     x, y = symbols('x y')
                     new_tree.expression_below = random_function.function.sympy_expression.subs(x, new_tree.left.expression_below).subs(y, new_tree.right.expression_below)
+                    new_tree.size_below = new_tree.right.size_below + new_tree.left.size_below
 
                 elif random_function.function.number_of_parameters == 1:
-                    new_tree = Node(random_function, None)
+                    new_tree = Node(random_function, None, None)
                     new_tree.right = None
                     new_tree.left = self.grow(max_depth + 1)
                     x = Symbol('x')
                     new_tree.expression_below = random_function.function.sympy_expression.subs(x, new_tree.left.expression_below)
+                    new_tree.size_below = new_tree.left.size_below
 
                 return new_tree
 
@@ -91,3 +110,10 @@ def generate_population(size, generation_parameters):
         population.append(tree_generator.generate_random_tree_grow())
 
     return population
+
+def mutate_tree(tree):
+    # choose random node
+    tree = tree.find_random_node()
+
+    new_subtree = 
+    pass
