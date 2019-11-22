@@ -1,4 +1,4 @@
-from regression.symbollic_trees import GenerationParameters, SymbolicTreeGenerator, generate_population
+from regression.symbollic_trees import GenerationParameters, SymbolicTreeGenerator, mutate_tree
 from testset.generate import generate_noisy_function
 import numpy as np
 import matplotlib.pyplot as plt
@@ -38,10 +38,13 @@ plt.plot(a, np.sin(a), 'r')
 best_expression_score = 100000 # some arbitrary large number
 best_expression = 0
 
+
+# generate initial population of expressions
+tree_generator = SymbolicTreeGenerator(gen_par)
+current_trees_population = tree_generator.generate_population(SIZE_OF_POPULATION)
+
 try:
     while True:
-        # generate initial population of expressions
-        current_trees_population = generate_population(SIZE_OF_POPULATION, gen_par)
         # evaluate all expressions from population
         scores = np.array([])
         for tree in current_trees_population:
@@ -73,6 +76,7 @@ try:
         # mutation
         for idx in range(TO_MUTATE):
             tree_to_mutate = np.random.choice(current_trees_population)
+            mutate_tree(tree_to_mutate, tree_generator)
 
 
 except KeyboardInterrupt:

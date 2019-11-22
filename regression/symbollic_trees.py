@@ -40,6 +40,7 @@ class Node:
         self.value = value
         self.left = None
         self.right = None
+        self.parent = None
         self.expression_below = expression_below
         self.size_below = size_below
 
@@ -60,10 +61,10 @@ class SymbolicTreeGenerator:
         
     def generate_random_tree_grow(self):
         # return a randomly generated tree according to the passed in generation params
-        return(self.grow(0))
+        return(self.grow())
 
-    def grow(self, max_depth):
-        if max_depth == self.generation_parameters.max_depth:
+    def grow(self, current_depth=0):
+        if current_depth == self.generation_parameters.max_depth:
             random_terminal = random.choice(self.generation_parameters.symbolic_terminals + self.generation_parameters.numerical_terminals)
             return Node(random_terminal, random_terminal.function, 0)
         else:
@@ -74,8 +75,10 @@ class SymbolicTreeGenerator:
                 if random_function.function.number_of_parameters == 2:
                     # returns the subtree for the function
                     new_tree = Node(random_function, None, None)
-                    new_tree.right = self.grow(max_depth + 1)
-                    new_tree.left = self.grow(max_depth + 1)
+                    new_tree.right = self.grow(current_depth + 1)
+                    new_tree.left = self.grow(current_depth + 1)
+                    new_tree.left.parent = new_tree
+                    new_tree.right.parent = new_tree
                     x, y = symbols('x y')
                     new_tree.expression_below = random_function.function.sympy_expression.subs(x, new_tree.left.expression_below).subs(y, new_tree.right.expression_below)
                     new_tree.size_below = new_tree.right.size_below + new_tree.left.size_below
@@ -83,12 +86,20 @@ class SymbolicTreeGenerator:
                 elif random_function.function.number_of_parameters == 1:
                     new_tree = Node(random_function, None, None)
                     new_tree.right = None
-                    new_tree.left = self.grow(max_depth + 1)
+                    new_tree.left = self.grow(current_depth + 1)
+                    new_tree.left.parent = new_tree
                     x = Symbol('x')
                     new_tree.expression_below = random_function.function.sympy_expression.subs(x, new_tree.left.expression_below)
                     new_tree.size_below = new_tree.left.size_below
 
                 return new_tree
+
+    def generate_population(self, size):
+        population = []
+        for _ in range(size):
+            population.append(self.generate_random_tree_grow())
+
+        return population
 
 
 class GenerationParameters:
@@ -102,18 +113,21 @@ class GenerationParameters:
 
         self.functions = self.numerical_terminals + self.symbolic_terminals + self.non_terminals
 
-
-def generate_population(size, generation_parameters):
-    tree_generator = SymbolicTreeGenerator(generation_parameters)
-    population = []
-    for _ in range(size):
-        population.append(tree_generator.generate_random_tree_grow())
-
-    return population
-
-def mutate_tree(tree):
+def mutate_tree(tree, tree_generator):
     # choose random node
-    tree = tree.find_random_node()
+    random_node = tree.find_random_node()
 
-    new_subtree = 
-    pass
+    new_sub_tree = tree_generator.generate_random_tree_grow()
+
+    if random_node.parent == None:
+        tree.root = new_sub_tree
+
+    if random_node.parent.left == random_node:
+        random_node.parent.left = new_sub_tree
+    else:
+        random_node.parent.right = new_sub_tree
+
+    current_node = random_node.parent
+    while current_node.parent != None:
+        current_node.size_below = current_node.right.size_below if current_node.right else 0 + current_node.left.size_below if current_node.left else 0
+        current_node = current_node.parent
