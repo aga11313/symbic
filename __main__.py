@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from sympy import Symbol, sin
 from evaluation.evaluate import score_expression
 import sys
+import random
 
 # symbolic regression parameters
 MAX_NUMBER_OF_INDEPENDENT_VARIABLES = 1
@@ -15,6 +16,7 @@ TOP_OF_POPULATION = SIZE_OF_POPULATION - (TO_MUTATE + TO_CROSSOVER)
 MAX_TREE_DEPTH = 4
 TERMINALS = [1, 2, 3]
 NON_TERMINALS =  ['divide', 'multiply', 'sinus']
+TOURNAMENT_SIZE = 5
 
 # test evaluation cases constants
 FUNCTION = np.sin
@@ -43,36 +45,44 @@ best_expression = 0
 tree_generator = SymbolicTreeGenerator(gen_par)
 current_trees_population = tree_generator.generate_population(SIZE_OF_POPULATION)
 
+counter = 0
+
 try:
     while True:
+        print('generation {}'.format(counter))
+        counter = counter + 1
         # evaluate all expressions from population
-        scores = np.array([])
+        scores = []
         for tree in current_trees_population:
-            score = score_expression(x, np.reshape(noisy_data, (len(x), 1)), tree.expression_below, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
-            scores = np.append(scores, [score])
-        
-        probabilites = np.divide(scores, np.sum(scores))
-        sorted_score_indices = scores.argsort()
+            score = score_expression(x, np.reshape(noisy_data, (len(x), 1)), tree.root.expression_below, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
+            scores.append(score)
 
-        # check if the best member of current population better than previous best
-        top_of_population_score_idx = sorted_score_indices[:1][0]
-        if scores[top_of_population_score_idx] < best_expression_score:
-            best_expression_score = scores[top_of_population_score_idx]
-            best_expression = current_trees_population[top_of_population_score_idx].expression_below
+        trees_and_scores = list(zip(current_trees_population, scores))
+        best_tree_of_population = min(trees_and_scores, key=lambda x: x[1])[0]
+        best_expression = best_tree_of_population.root.expression_below
+        print(best_expression)
 
-        new_trees_population = []
+        # # check if the best member of current population better than previous best
+        # top_of_population_score_idx = scores[:1]
+        # if scores[top_of_population_score_idx] < best_expression_score:
+        #     best_expression_score = scores[top_of_population_score_idx]
+        #     best_expression = current_trees_population[top_of_population_score_idx].expression_below
 
-        for idx in range(TOP_OF_POPULATION):
-            tree1 = np.random.choice(current_trees_population, probabilites)
-            new_trees_population = new_trees_population + tree1
+        # tournament
+        new_population = []
+        for _ in range(SIZE_OF_POPULATION):
+            tournament = [random.choice(trees_and_scores) for _ in range(TOURNAMENT_SIZE)]
+            best_tree_in_tournament = min(tournament, key=lambda x: x[1])[0]
+            new_population.append(best_tree_in_tournament)
+
+        current_trees_population = new_population
 
         # perform crossover and mutation
         # crossover
-        for idx in range(TO_CROSSOVER/2):
-            tree1 = np.random.choice(current_trees_population, p=probabilites)
-            tree2 = np.random.choice(current_trees_population, p=probabilites)
-            crossover_trees(tree1, tree2)
-            
+        for idx in range(TO_CROSSOVER//2):
+            tree1 = random.choice(current_trees_population)
+            tree2 = random.choice(current_trees_population)
+            crossover_trees(tree1, tree2)   
 
         # mutation
         for idx in range(TO_MUTATE):
@@ -81,6 +91,7 @@ try:
 
 
 except KeyboardInterrupt:
+    print(best_expression)
     pass
 
 '''
@@ -96,3 +107,4 @@ To see the result of the noisy test sample run:
     plt.show()
 
 '''
+plt.show()

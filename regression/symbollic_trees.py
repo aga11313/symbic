@@ -3,26 +3,29 @@ from sympy import Mul, Symbol, Integer, symbols, Pow, sin
 import numpy as np
 
 class SymbolicTree:
-    def __init__(self):
-        self.root = None
+    def __init__(self, root):
+        self.root = root
 
     def get_expression(self):
         # return the current tree as a mathematical expression
         pass
 
     def find_random_node(self):
-        if self.root.left == None:
-            leftSize = 0
-        else:
-            leftSize = self.root.left.size_below
+        return find_random_node(self.root)
 
-        index = np.random.choice(self.root.size_below)
-        if index < leftSize:
-            return self.root.left.find_random_node()
-        elif index == leftSize:
-            return self
-        else:
-            return self.root.right.find_random_node()
+def find_random_node(root):
+    if root.left == None:
+        leftSize = 0
+    else:
+        leftSize = root.left.size_below + 1
+
+    index = random.randint(0, root.size_below)
+    if index < leftSize:
+        return find_random_node(root.left)
+    elif index == leftSize:
+        return root
+    else:
+        return find_random_node(root.right)
 
 class Function:
     def __init__(self, type_of_function, function):
@@ -61,7 +64,7 @@ class SymbolicTreeGenerator:
         
     def generate_random_tree_grow(self):
         # return a randomly generated tree according to the passed in generation params
-        return(self.grow())
+        return(SymbolicTree(self.grow()))
 
     def grow(self, current_depth=0):
         if current_depth == self.generation_parameters.max_depth:
@@ -117,10 +120,11 @@ def mutate_tree(tree, tree_generator):
     # choose random node
     random_node = tree.find_random_node()
 
-    new_sub_tree = tree_generator.generate_random_tree_grow()
+    new_sub_tree = tree_generator.generate_random_tree_grow().root
 
     if random_node.parent == None:
         tree.root = new_sub_tree
+        return
 
     if random_node.parent.left == random_node:
         random_node.parent.left = new_sub_tree
@@ -147,12 +151,12 @@ def crossover_trees(tree1, tree2):
     if random_node2 == tree2.root:
         tree2.root = random_node1
 
-    current_node = random_node1.parent
+    current_node = random_node1
     while current_node.parent != None:
         current_node.size_below = current_node.right.size_below if current_node.right else 0 + current_node.left.size_below if current_node.left else 0
         current_node = current_node.parent
 
-    current_node = random_node2.parent
+    current_node = random_node2
     while current_node.parent != None:
         current_node.size_below = current_node.right.size_below if current_node.right else 0 + current_node.left.size_below if current_node.left else 0
         current_node = current_node.parent
