@@ -1,5 +1,5 @@
 import random, math
-from sympy import Mul, Symbol, Integer, symbols, Pow, sin
+from sympy import Mul, Symbol, Integer, symbols, Pow, sin, cos
 import numpy as np
 
 class SymbolicTree:
@@ -50,7 +50,8 @@ class Node:
 non_terminals_list = {
     'multiply': Function('non_terminal', NonTerminal('multiply', 2, Mul(Symbol('x'), Symbol('y')))),
     'divide': Function('non_terminal', NonTerminal('divide', 2, Mul(Symbol('x'), Pow(Symbol('y'), Integer(-1))))),
-    'sinus': Function('non_terminal', NonTerminal('sinus', 1, sin(Symbol('x')))),
+    'sine': Function('non_terminal', NonTerminal('sine', 1, sin(Symbol('x')))),
+    'cosine': Function('non_terminal', NonTerminal('cosine', 1, cos(Symbol('x')))),
     'power': Function('non_terminal', NonTerminal('power', 2, Pow(Symbol('x'), Symbol('y'))))
 }
 
@@ -137,26 +138,83 @@ def mutate_tree(tree, tree_generator):
         current_node = current_node.parent
 
 def crossover_trees(tree1, tree2):
+    # tree1 = SymbolicTree(Node(Function('terminal', 2), 2, 0))
+    # tree2 = SymbolicTree(Node(Function('terminal', 2), 2, 0))
+    if tree1.root == None:
+        print('None root')
     random_node1 = tree1.find_random_node()
     random_node2 = tree2.find_random_node()
 
-    temp_parent = random_node2.parent
+    # Assign parent references
+    node1_parent = random_node1.parent
+    node2_parent = random_node2.parent
 
-    random_node1.parent = random_node2.parent
-    random_node2.parent = temp_parent
+    # Swap parents
+    random_node1.parent = node2_parent
+    random_node2.parent = node1_parent
 
-    if random_node1 == tree1.root:
+    if node1_parent:
+        # Reassign children references for node1
+        if node1_parent.right == random_node1:
+            node1_parent.right = random_node2
+        else:
+            node1_parent.left = random_node2
+    else:
         tree1.root = random_node2
-    
-    if random_node2 == tree2.root:
+
+    if node2_parent:
+        # Reassign children references for node 2
+        if node2_parent.right == random_node2:
+            node2_parent.right = random_node1
+        else:
+            node2_parent.left = random_node1
+    else:
         tree2.root = random_node1
 
     current_node = random_node1
-    while current_node.parent != None:
-        current_node.size_below = current_node.right.size_below if current_node.right else 0 + current_node.left.size_below if current_node.left else 0
-        current_node = current_node.parent
 
+    root_reached = False
+
+    while not root_reached:
+        x, y = symbols('x y')
+
+        size = 0
+        if current_node.right:
+            size = size + current_node.right.size_below + 1
+        if current_node.left:
+            size = size + current_node.left.size_below + 1
+
+        current_node.size_below = size
+        
+        if current_node.right:
+            current_node.expression_below = current_node.value.function.sympy_expression.subs(x, current_node.left.expression_below).subs(y, current_node.right.expression_below)
+        elif current_node.left:
+            current_node.expression_below = current_node.value.function.sympy_expression.subs(x, current_node.left.expression_below)
+        
+        if not current_node.parent:
+            root_reached = True
+        else:
+            current_node = current_node.parent
+        
+    root_reached = False
     current_node = random_node2
-    while current_node.parent != None:
-        current_node.size_below = current_node.right.size_below if current_node.right else 0 + current_node.left.size_below if current_node.left else 0
-        current_node = current_node.parent
+    while not root_reached:
+        x, y = symbols('x y')
+
+        size = 0
+        if current_node.right:
+            size = size + current_node.right.size_below + 1
+        if current_node.left:
+            size = size + current_node.left.size_below + 1
+
+        current_node.size_below = size
+
+        if current_node.right:
+            current_node.expression_below = current_node.value.function.sympy_expression.subs(x, current_node.left.expression_below).subs(y, current_node.right.expression_below)
+        elif current_node.left:
+            current_node.expression_below = current_node.value.function.sympy_expression.subs(x, current_node.left.expression_below)
+        
+        if not current_node.parent:
+            root_reached = True
+        else:
+            current_node = current_node.parent

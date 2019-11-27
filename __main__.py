@@ -6,20 +6,21 @@ from sympy import Symbol, sin
 from evaluation.evaluate import score_expression
 import sys
 import random
+from statistics import mean
 
 # symbolic regression parameters
 MAX_NUMBER_OF_INDEPENDENT_VARIABLES = 1
 TO_MUTATE = 50
-TO_CROSSOVER = 30 # must be even
+TO_CROSSOVER = 40 # must be even
 SIZE_OF_POPULATION = 100
 TOP_OF_POPULATION = SIZE_OF_POPULATION - (TO_MUTATE + TO_CROSSOVER)
-MAX_TREE_DEPTH = 4
+MAX_TREE_DEPTH = 2
 TERMINALS = [1, 2, 3]
-NON_TERMINALS =  ['divide', 'multiply', 'sinus']
+NON_TERMINALS =  ['divide', 'multiply', 'sine', 'cosine']
 TOURNAMENT_SIZE = 5
 
 # test evaluation cases constants
-FUNCTION = np.sin
+FUNCTION = np.cos
 LOC = 0
 SCALE = 0.5
 NUMBER_OF_SAMPLE_POINTS = 50
@@ -34,7 +35,7 @@ noisy_data, x = generate_noisy_function(FUNCTION, LOC, SCALE, NUMBER_OF_SAMPLE_P
 plt.plot(noisy_data, x, 'ro')
 
 a = np.linspace(0,2 * np.pi,100)
-plt.plot(a, np.sin(a), 'r')
+# plt.plot(a, np.sin(a), 'r')
 
 # initialize best expression variables
 best_expression_score = 100000 # some arbitrary large number
@@ -57,23 +58,22 @@ try:
             score = score_expression(x, np.reshape(noisy_data, (len(x), 1)), tree.root.expression_below, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
             scores.append(score)
 
+        print('Mean: {}'.format(np.mean(scores)))  
+
         trees_and_scores = list(zip(current_trees_population, scores))
         best_tree_of_population = min(trees_and_scores, key=lambda x: x[1])[0]
+        best_tree_fitness = min(trees_and_scores, key=lambda x: x[1])[1]
         best_expression = best_tree_of_population.root.expression_below
-        print(best_expression)
-
-        # # check if the best member of current population better than previous best
-        # top_of_population_score_idx = scores[:1]
-        # if scores[top_of_population_score_idx] < best_expression_score:
-        #     best_expression_score = scores[top_of_population_score_idx]
-        #     best_expression = current_trees_population[top_of_population_score_idx].expression_below
+        print(best_expression, best_tree_fitness)
 
         # tournament
         new_population = []
-        for _ in range(SIZE_OF_POPULATION):
+        # for _ in range(SIZE_OF_POPULATION):
+        while SIZE_OF_POPULATION >= len(new_population):
             tournament = [random.choice(trees_and_scores) for _ in range(TOURNAMENT_SIZE)]
             best_tree_in_tournament = min(tournament, key=lambda x: x[1])[0]
-            new_population.append(best_tree_in_tournament)
+            if best_tree_in_tournament.root.size_below < 8:
+                new_population.append(best_tree_in_tournament)
 
         current_trees_population = new_population
 
@@ -82,17 +82,20 @@ try:
         for idx in range(TO_CROSSOVER//2):
             tree1 = random.choice(current_trees_population)
             tree2 = random.choice(current_trees_population)
-            crossover_trees(tree1, tree2)   
+            # print('Before crossover: {}, {}'.format(tree1.root.expression_below, tree2.root.expression_below))
+            crossover_trees(tree1, tree2)
+            # print('After crossover: {}, {}'.format(tree1.root.expression_below, tree2.root.expression_below))
 
         # mutation
-        for idx in range(TO_MUTATE):
-            tree_to_mutate = np.random.choice(current_trees_population)
-            mutate_tree(tree_to_mutate, tree_generator)
+        # for idx in range(TO_MUTATE):
+        #     tree_to_mutate = np.random.choice(current_trees_population)
+        #     mutate_tree(tree_to_mutate, tree_generator)
 
 
 except KeyboardInterrupt:
-    print(best_expression)
+    print('Best expression: {}'.format(best_expression))
     pass
+
 
 '''
 Example usage of generate_noisy_function

@@ -23,8 +23,8 @@ def score_expression(equation_left, equation_right, expression, number_of_indepe
 
         # Calculate difference between value of expression and the noisy data
         if not isinstance(expression_value, int):
-            expression_score = expression_score + abs((equation_left[right_data_sample_idx] - expression_value.evalf()))
+            expression_score = expression_score + abs((equation_left[right_data_sample_idx] - expression_value.evalf())**2)
         else:
-            expression_score = expression_score + abs((equation_left[right_data_sample_idx] - expression_value))
+            expression_score = expression_score + abs((equation_left[right_data_sample_idx] - expression_value)**2)
 
     return expression_score
