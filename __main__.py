@@ -7,6 +7,7 @@ from evaluation.evaluate import score_expression
 import sys
 import random
 from statistics import mean
+from copy import deepcopy
 
 # symbolic regression parameters
 MAX_NUMBER_OF_INDEPENDENT_VARIABLES = 1
@@ -73,7 +74,8 @@ try:
             tournament = [random.choice(trees_and_scores) for _ in range(TOURNAMENT_SIZE)]
             best_tree_in_tournament = min(tournament, key=lambda x: x[1])[0]
             if best_tree_in_tournament.root.size_below < 8:
-                new_population.append(best_tree_in_tournament)
+                cp = deepcopy(best_tree_in_tournament)
+                new_population.append(cp)
 
         current_trees_population = new_population
 
@@ -82,14 +84,14 @@ try:
         for idx in range(TO_CROSSOVER//2):
             tree1 = random.choice(current_trees_population)
             tree2 = random.choice(current_trees_population)
-            # print('Before crossover: {}, {}'.format(tree1.root.expression_below, tree2.root.expression_below))
+            while tree1 == tree2:
+                tree2 = random.choice(current_trees_population)
             crossover_trees(tree1, tree2)
-            # print('After crossover: {}, {}'.format(tree1.root.expression_below, tree2.root.expression_below))
-
+            
         # mutation
-        # for idx in range(TO_MUTATE):
-        #     tree_to_mutate = np.random.choice(current_trees_population)
-        #     mutate_tree(tree_to_mutate, tree_generator)
+        for idx in range(TO_MUTATE):
+            tree_to_mutate = np.random.choice(current_trees_population)
+            mutate_tree(tree_to_mutate, tree_generator)
 
 
 except KeyboardInterrupt:

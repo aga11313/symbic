@@ -138,8 +138,7 @@ def mutate_tree(tree, tree_generator):
         current_node = current_node.parent
 
 def crossover_trees(tree1, tree2):
-    # tree1 = SymbolicTree(Node(Function('terminal', 2), 2, 0))
-    # tree2 = SymbolicTree(Node(Function('terminal', 2), 2, 0))
+
     if tree1.root == None:
         print('None root')
     random_node1 = tree1.find_random_node()
@@ -185,12 +184,14 @@ def crossover_trees(tree1, tree2):
             size = size + current_node.left.size_below + 1
 
         current_node.size_below = size
-        
-        if current_node.right:
-            current_node.expression_below = current_node.value.function.sympy_expression.subs(x, current_node.left.expression_below).subs(y, current_node.right.expression_below)
-        elif current_node.left:
-            current_node.expression_below = current_node.value.function.sympy_expression.subs(x, current_node.left.expression_below)
-        
+        try:
+            if current_node.right:
+                current_node.expression_below = current_node.value.function.sympy_expression.subs(x, current_node.left.expression_below).subs(y, current_node.right.expression_below)
+            elif current_node.left:
+                current_node.expression_below = current_node.value.function.sympy_expression.subs(x, current_node.left.expression_below)
+        except:
+            print()
+
         if not current_node.parent:
             root_reached = True
         else:
@@ -209,11 +210,15 @@ def crossover_trees(tree1, tree2):
 
         current_node.size_below = size
 
-        if current_node.right:
-            current_node.expression_below = current_node.value.function.sympy_expression.subs(x, current_node.left.expression_below).subs(y, current_node.right.expression_below)
-        elif current_node.left:
-            current_node.expression_below = current_node.value.function.sympy_expression.subs(x, current_node.left.expression_below)
-        
+        try:
+            if current_node.right:
+                current_node.expression_below = current_node.value.function.sympy_expression.subs(x, current_node.left.expression_below).subs(y, current_node.right.expression_below)
+            elif current_node.left:
+                current_node.expression_below = current_node.value.function.sympy_expression.subs(x, current_node.left.expression_below)
+        except:
+            print()
+            pass
+
         if not current_node.parent:
             root_reached = True
         else:
