@@ -8,20 +8,24 @@ import sys
 import random
 from statistics import mean
 from copy import deepcopy
+from itertools import compress
+
+import numpy as np
+import matplotlib.pyplot as plt
 
 # symbolic regression parameters
 MAX_NUMBER_OF_INDEPENDENT_VARIABLES = 1
-TO_MUTATE = 50
-TO_CROSSOVER = 40 # must be even
-SIZE_OF_POPULATION = 100
+TO_MUTATE = 300
+TO_CROSSOVER = 500 # must be even
+SIZE_OF_POPULATION = 1000
 TOP_OF_POPULATION = SIZE_OF_POPULATION - (TO_MUTATE + TO_CROSSOVER)
-MAX_TREE_DEPTH = 2
-TERMINALS = [1, 2, 3]
-NON_TERMINALS =  ['divide', 'multiply', 'sine', 'cosine']
+MAX_TREE_DEPTH = 4
+TERMINALS = list(range(-5, 5))
+NON_TERMINALS =  ['divide', 'multiply', 'sine', 'cosine', 'add']
 TOURNAMENT_SIZE = 5
 
 # test evaluation cases constants
-FUNCTION = np.cos
+FUNCTION = lambda x: 7*x
 LOC = 0
 SCALE = 0.5
 NUMBER_OF_SAMPLE_POINTS = 50
@@ -48,6 +52,7 @@ tree_generator = SymbolicTreeGenerator(gen_par)
 current_trees_population = tree_generator.generate_population(SIZE_OF_POPULATION)
 
 counter = 0
+best_expression = 0
 
 try:
     while True:
@@ -55,17 +60,27 @@ try:
         counter = counter + 1
         # evaluate all expressions from population
         scores = []
+        nans = []
         for tree in current_trees_population:
-            score = score_expression(x, np.reshape(noisy_data, (len(x), 1)), tree.root.expression_below, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
+            score, nan_value = score_expression(x, np.reshape(noisy_data, (len(x), 1)), tree.root.expression_below, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
             scores.append(score)
+            nans.append(not nan_value)
 
-        print('Mean: {}'.format(np.mean(scores)))  
+        print('Mean: {}'.format(np.mean(scores)))
+        
+        mu, sigma = 200, 25
+        n, bins, patches = plt.hist(list(compress(scores, nans)))
+        plt.show()
 
-        trees_and_scores = list(zip(current_trees_population, scores))
+        trees_and_scores = list(compress(zip(current_trees_population, scores, nans), nans))
         best_tree_of_population = min(trees_and_scores, key=lambda x: x[1])[0]
         best_tree_fitness = min(trees_and_scores, key=lambda x: x[1])[1]
-        best_expression = best_tree_of_population.root.expression_below
-        print(best_expression, best_tree_fitness)
+
+        if best_expression_score > best_tree_fitness:
+            best_expression = best_tree_of_population.root.expression_below
+            best_expression_score = best_tree_fitness
+
+        print(best_tree_of_population.root.expression_below, best_tree_fitness)
 
         # tournament
         new_population = []
@@ -73,7 +88,8 @@ try:
         while SIZE_OF_POPULATION >= len(new_population):
             tournament = [random.choice(trees_and_scores) for _ in range(TOURNAMENT_SIZE)]
             best_tree_in_tournament = min(tournament, key=lambda x: x[1])[0]
-            if best_tree_in_tournament.root.size_below < 8:
+            best_tree_in_tournament_nan = min(tournament, key=lambda x: x[1])[2]
+            if best_tree_in_tournament.root.size_below < 8 and best_tree_in_tournament_nan:
                 cp = deepcopy(best_tree_in_tournament)
                 new_population.append(cp)
 
@@ -92,6 +108,8 @@ try:
         for idx in range(TO_MUTATE):
             tree_to_mutate = np.random.choice(current_trees_population)
             mutate_tree(tree_to_mutate, tree_generator)
+
+        print()
 
 
 except KeyboardInterrupt:

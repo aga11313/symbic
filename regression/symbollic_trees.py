@@ -1,5 +1,5 @@
 import random, math
-from sympy import Mul, Symbol, Integer, symbols, Pow, sin, cos
+from sympy import Mul, Symbol, Integer, symbols, Pow, sin, cos, Add
 import numpy as np
 
 class SymbolicTree:
@@ -52,7 +52,8 @@ non_terminals_list = {
     'divide': Function('non_terminal', NonTerminal('divide', 2, Mul(Symbol('x'), Pow(Symbol('y'), Integer(-1))))),
     'sine': Function('non_terminal', NonTerminal('sine', 1, sin(Symbol('x')))),
     'cosine': Function('non_terminal', NonTerminal('cosine', 1, cos(Symbol('x')))),
-    'power': Function('non_terminal', NonTerminal('power', 2, Pow(Symbol('x'), Symbol('y'))))
+    'power': Function('non_terminal', NonTerminal('power', 2, Pow(Symbol('x'), Symbol('y')))),
+    'add': Function('non_terminal', NonTerminal('add', 2, Add(Symbol('x'), Symbol('y'))))
 }
 
 class SymbolicTreeGenerator:
