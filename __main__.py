@@ -15,12 +15,12 @@ import matplotlib.pyplot as plt
 
 # symbolic regression parameters
 MAX_NUMBER_OF_INDEPENDENT_VARIABLES = 1
-TO_MUTATE = 300
-TO_CROSSOVER = 500 # must be even
-SIZE_OF_POPULATION = 1000
+TO_MUTATE = 15
+TO_CROSSOVER = 24 # must be even
+SIZE_OF_POPULATION = 50
 TOP_OF_POPULATION = SIZE_OF_POPULATION - (TO_MUTATE + TO_CROSSOVER)
 MAX_TREE_DEPTH = 4
-TERMINALS = list(range(-5, 5))
+TERMINALS = list(range(-5000, 5000))
 NON_TERMINALS =  ['divide', 'multiply', 'sine', 'cosine', 'add']
 TOURNAMENT_SIZE = 5
 
@@ -31,6 +31,17 @@ SCALE = 0.5
 NUMBER_OF_SAMPLE_POINTS = 50
 UPPER_BOUNDARY = 2 * np.pi
 LOWER_BOUNDARY = 0
+
+# read simba data from local file and extract columns accroding to the variables wanted
+map_sysargs_column = {'ms': 0, 'sfr': 1, 'met': 2, 'mHI': 3, 'mH2': 4, 'mbh': 5, 'mdust': 6, 'mh': 7, 'rh': 8, 'sigh': 9}
+
+independent = 'ms'
+dependents = ['sfr']
+
+simba_50 = np.log(np.load('simba_list_50' + '.npy'))[0:100]
+
+independent_col = simba_50[map_sysargs_column[independent]]
+dependent_cols = simba_50[[map_sysargs_column[x] for x in dependents]]
 
 # initialize generation params
 gen_par = GenerationParameters(MAX_TREE_DEPTH, TERMINALS, NON_TERMINALS, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
@@ -61,16 +72,17 @@ try:
         # evaluate all expressions from population
         scores = []
         nans = []
-        for tree in current_trees_population:
-            score, nan_value = score_expression(x, np.reshape(noisy_data, (len(x), 1)), tree.root.expression_below, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
+        for idx, tree in enumerate(current_trees_population):
+            score, nan_value = score_expression(independent_col, np.reshape(dependent_cols, (len(independent_col), 1)), tree.root.expression_below, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
+            print('tree {}, {}'.format(idx, tree.root.expression_below))
             scores.append(score)
             nans.append(not nan_value)
 
         print('Mean: {}'.format(np.mean(scores)))
         
-        mu, sigma = 200, 25
-        n, bins, patches = plt.hist(list(compress(scores, nans)))
-        plt.show()
+        # mu, sigma = 200, 25
+        # n, bins, patches = plt.hist(list(compress(scores, nans)))
+        # plt.show()
 
         trees_and_scores = list(compress(zip(current_trees_population, scores, nans), nans))
         best_tree_of_population = min(trees_and_scores, key=lambda x: x[1])[0]

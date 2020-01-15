@@ -70,31 +70,42 @@ class SymbolicTreeGenerator:
 
     def grow(self, current_depth=0):
         if current_depth == self.generation_parameters.max_depth:
-            random_terminal = random.choice(self.generation_parameters.symbolic_terminals + self.generation_parameters.numerical_terminals)
+            is_numerical_terminal = random.choice([True, False])
+            if (is_numerical_terminal):
+                random_terminal = random.choice(self.generation_parameters.numerical_terminals)
+            else:
+                random_terminal = random.choice(self.generation_parameters.symbolic_terminals)
             return Node(random_terminal, random_terminal.function, 0)
         else:
-            random_function = random.choice(self.generation_parameters.functions)
-            if random_function.type == 'numerical_terminal' or random_function.type == 'symbolic_terminal':
-                return Node(random_function, random_function.function, 0)
+            # random_function = random.choice(self.generation_parameters.functions)
+            node_type = random.choice(['numerical_terminal', 'symbolic terminal', 'mathematical_expression'])
+            if node_type == 'numerical_terminal' or node_type == 'symbolic_terminal':
+                is_numerical_terminal = random.choice([True, False])
+                if (is_numerical_terminal):
+                    random_terminal = random.choice(self.generation_parameters.numerical_terminals)
+                else:
+                    random_terminal = random.choice(self.generation_parameters.symbolic_terminals)
+                return Node(random_terminal, random_terminal.function, 0)
             else:
-                if random_function.function.number_of_parameters == 2:
+                random_mathematical_expression = random.choice(self.generation_parameters.non_terminals)
+                if random_mathematical_expression.function.number_of_parameters == 2:
                     # returns the subtree for the function
-                    new_tree = Node(random_function, None, None)
+                    new_tree = Node(random_mathematical_expression, None, None)
                     new_tree.right = self.grow(current_depth + 1)
                     new_tree.left = self.grow(current_depth + 1)
                     new_tree.left.parent = new_tree
                     new_tree.right.parent = new_tree
                     x, y = symbols('x y')
-                    new_tree.expression_below = random_function.function.sympy_expression.subs(x, new_tree.left.expression_below).subs(y, new_tree.right.expression_below)
+                    new_tree.expression_below = random_mathematical_expression.function.sympy_expression.subs(x, new_tree.left.expression_below).subs(y, new_tree.right.expression_below)
                     new_tree.size_below = new_tree.right.size_below + new_tree.left.size_below
 
-                elif random_function.function.number_of_parameters == 1:
-                    new_tree = Node(random_function, None, None)
+                elif random_mathematical_expression.function.number_of_parameters == 1:
+                    new_tree = Node(random_mathematical_expression, None, None)
                     new_tree.right = None
                     new_tree.left = self.grow(current_depth + 1)
                     new_tree.left.parent = new_tree
                     x = Symbol('x')
-                    new_tree.expression_below = random_function.function.sympy_expression.subs(x, new_tree.left.expression_below)
+                    new_tree.expression_below = random_mathematical_expression.function.sympy_expression.subs(x, new_tree.left.expression_below)
                     new_tree.size_below = new_tree.left.size_below
 
                 return new_tree
