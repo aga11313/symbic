@@ -12,16 +12,17 @@ from itertools import compress
 
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # symbolic regression parameters
 MAX_NUMBER_OF_INDEPENDENT_VARIABLES = 1
-TO_MUTATE = 15
-TO_CROSSOVER = 24 # must be even
-SIZE_OF_POPULATION = 50
+TO_MUTATE = 30
+TO_CROSSOVER = 50 # must be even
+SIZE_OF_POPULATION = 100
 TOP_OF_POPULATION = SIZE_OF_POPULATION - (TO_MUTATE + TO_CROSSOVER)
 MAX_TREE_DEPTH = 4
-TERMINALS = list(range(-5000, 5000))
-NON_TERMINALS =  ['divide', 'multiply', 'sine', 'cosine', 'add']
+TERMINALS = list(range(-10, 10))
+NON_TERMINALS =  ['divide', 'multiply', 'add']
 TOURNAMENT_SIZE = 5
 
 # test evaluation cases constants
@@ -35,23 +36,37 @@ LOWER_BOUNDARY = 0
 # read simba data from local file and extract columns accroding to the variables wanted
 map_sysargs_column = {'ms': 0, 'sfr': 1, 'met': 2, 'mHI': 3, 'mH2': 4, 'mbh': 5, 'mdust': 6, 'mh': 7, 'rh': 8, 'sigh': 9}
 
-independent = 'ms'
-dependents = ['sfr']
+independent = 'sfr'
+dependents = ['ms']
 
-simba_50 = np.log(np.load('simba_list_50' + '.npy'))[0:100]
+independent_dependent = dependents + [independent]
 
-independent_col = simba_50[map_sysargs_column[independent]]
-dependent_cols = simba_50[[map_sysargs_column[x] for x in dependents]]
+simba_50 = np.load('simba_list_50' + '.npy')
+simba_50_reshaped = simba_50.T
+
+simba_df = pd.DataFrame(simba_50_reshaped, columns=['ms', 'sfr', 'met', 'mHI', 'mH2', 'mbh', 'mdust', 'mh', 'rh', 'sigh'])    
+
+simba_df[independent_dependent] = simba_df[simba_df[independent_dependent] != 0][independent_dependent]
+simba_df = simba_df.dropna()
+
+simba_50_no_zeros = simba_df.to_numpy().T
+
+simba_50_log = np.log(simba_50_no_zeros)
+
+independent_col = simba_50_log[map_sysargs_column[independent]]
+dependent_cols = simba_50_log[[map_sysargs_column[x] for x in dependents]]
 
 # initialize generation params
 gen_par = GenerationParameters(MAX_TREE_DEPTH, TERMINALS, NON_TERMINALS, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
 
 # generate noisy data sample
 noisy_data, x = generate_noisy_function(FUNCTION, LOC, SCALE, NUMBER_OF_SAMPLE_POINTS, UPPER_BOUNDARY, LOWER_BOUNDARY)
-plt.plot(noisy_data, x, 'ro')
+# plt.plot(noisy_data, x, 'ro')
 
 a = np.linspace(0,2 * np.pi,100)
 # plt.plot(a, np.sin(a), 'r')
+
+plt.plot(dependent_cols[0], independent_col, 'ro')
 
 # initialize best expression variables
 best_expression_score = 100000 # some arbitrary large number
@@ -74,7 +89,7 @@ try:
         nans = []
         for idx, tree in enumerate(current_trees_population):
             score, nan_value = score_expression(independent_col, np.reshape(dependent_cols, (len(independent_col), 1)), tree.root.expression_below, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
-            print('tree {}, {}'.format(idx, tree.root.expression_below))
+            print('tree {}, {}, {}'.format(idx, tree.root.expression_below, score))
             scores.append(score)
             nans.append(not nan_value)
 

@@ -27,11 +27,11 @@ def score_expression(equation_left, equation_right, expression, number_of_indepe
         if not isinstance(expression_value, (int, float)):
             evaluation_result = expression_value.evalf()
             if evaluation_result != nan:
-                expression_score = expression_score + abs((equation_left[right_data_sample_idx] - evaluation_result)**2)
+                expression_score = expression_score + ((equation_left[right_data_sample_idx] - evaluation_result)**2/len(equation_left))
                 is_result_nan = False
         else:
             if not math.isnan(expression_value):
-                expression_score = expression_score + abs((equation_left[right_data_sample_idx] - expression_value)**2)
+                expression_score = expression_score + ((equation_left[right_data_sample_idx] - expression_value)**2/len(equation_left))
                 is_result_nan = False
                 
-    return expression_score, is_result_nan
+    return math.sqrt(expression_score), is_result_nan
