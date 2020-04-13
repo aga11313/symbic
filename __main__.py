@@ -22,11 +22,11 @@ SIZE_OF_POPULATION = 100
 TOP_OF_POPULATION = SIZE_OF_POPULATION - (TO_MUTATE + TO_CROSSOVER)
 MAX_TREE_DEPTH = 4
 TERMINALS = list(range(-10, 10))
-NON_TERMINALS =  ['divide', 'multiply', 'add']
+NON_TERMINALS =  ['divide', 'multiply', 'add', 'sine', 'logarithm']
 TOURNAMENT_SIZE = 5
 
 # test evaluation cases constants
-FUNCTION = lambda x: 7*x
+FUNCTION = lambda x: np.log(x)
 LOC = 0
 SCALE = 0.5
 NUMBER_OF_SAMPLE_POINTS = 50
@@ -61,17 +61,16 @@ gen_par = GenerationParameters(MAX_TREE_DEPTH, TERMINALS, NON_TERMINALS, MAX_NUM
 
 # generate noisy data sample
 noisy_data, x = generate_noisy_function(FUNCTION, LOC, SCALE, NUMBER_OF_SAMPLE_POINTS, UPPER_BOUNDARY, LOWER_BOUNDARY)
-# plt.plot(noisy_data, x, 'ro')
-
+fig = plt.figure()
+plt.plot(noisy_data, x, 'ro', alpha=0.5)
 a = np.linspace(0,2 * np.pi,100)
-# plt.plot(a, np.sin(a), 'r')
+plt.plot(a, np.log(a), 'r')
 
-plt.plot(dependent_cols[0], independent_col, 'ro')
+#plt.plot(dependent_cols[0], independent_col, 'ro')
 
 # initialize best expression variables
 best_expression_score = 100000 # some arbitrary large number
 best_expression = 0
-
 
 # generate initial population of expressions
 tree_generator = SymbolicTreeGenerator(gen_par)
@@ -88,7 +87,8 @@ try:
         scores = []
         nans = []
         for idx, tree in enumerate(current_trees_population):
-            score, nan_value = score_expression(independent_col, np.reshape(dependent_cols, (len(independent_col), 1)), tree.root.expression_below, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
+            score, nan_value = score_expression(x, np.reshape(noisy_data, (len(x), 1)), tree.root.expression_below, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
+            # score, nan_value = score_expression(independent_col, np.reshape(dependent_cols, (len(independent_col), 1)), tree.root.expression_below, MAX_NUMBER_OF_INDEPENDENT_VARIABLES)
             print('tree {}, {}, {}'.format(idx, tree.root.expression_below, score))
             scores.append(score)
             nans.append(not nan_value)
